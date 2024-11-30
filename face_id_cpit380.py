@@ -20,16 +20,21 @@ saim_face_encoding = face_recognition.face_encodings(saim_image)[0]
 mohammad_image = face_recognition.load_image_file("images/Mohammed1.jpg")
 mohammad_face_encoding = face_recognition.face_encodings(mohammad_image)[0]
 
+saud_image = face_recognition.load_image_file("images/Saud2.jpg")
+saud_face_encoding = face_recognition.face_encodings(saud_image)[0]
+
 # Create arrays of known face encodings and their names
 known_face_encodings = [
     ali_face_encoding,
     saim_face_encoding,
-    mohammad_face_encoding
+    mohammad_face_encoding,
+    saud_face_encoding
 ]
 known_face_names = [
     "Ali Zaid",
     "Dr. Saim",
-    "Mohammad Serajuldeen"
+    "Mohammad Serajuldeen",
+    "Saud Aljedani"
 ]
 
 while True:
