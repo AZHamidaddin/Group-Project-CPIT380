@@ -1,29 +1,25 @@
 import face_recognition
 import cv2
 import numpy as np
-
-# https://github.com/z-mahmud22/Dlib_Windows_Python3.x to install dlib (IMPORTANT)
-
+import sys
 
 # Get a reference to webcam #0 (the default one)
 video_capture = cv2.VideoCapture(0)
 
-# Load a sample picture and learn how to recognize it.
+# Load sample images and encode them
 ali_image = face_recognition.load_image_file("images/Ali1.jpg")
 ali_face_encoding = face_recognition.face_encodings(ali_image)[0]
 
-# Load a second sample picture and learn how to recognize it.
 saim_image = face_recognition.load_image_file("images/Dr Saim1.jpg")
 saim_face_encoding = face_recognition.face_encodings(saim_image)[0]
 
-# Load a sample picture and learn how to recognize it.
 mohammad_image = face_recognition.load_image_file("images/Mohammed1.jpg")
 mohammad_face_encoding = face_recognition.face_encodings(mohammad_image)[0]
 
 saud_image = face_recognition.load_image_file("images/Saud2.jpg")
 saud_face_encoding = face_recognition.face_encodings(saud_image)[0]
 
-# Create arrays of known face encodings and their names
+# Known face encodings and names
 known_face_encodings = [
     ali_face_encoding,
     saim_face_encoding,
@@ -37,57 +33,52 @@ known_face_names = [
     "Saud Aljedani"
 ]
 
-while True:
-    # Grab a single frame of video
-    ret, frame = video_capture.read()
+try:
+    while True:
+        # Capture a single frame
+        ret, frame = video_capture.read()
+        if not ret:
+            break
 
-    # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
-    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        # Convert to RGB
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-    # Find all the faces and face encodings in the frame of video
-    face_locations = face_recognition.face_locations(rgb_frame)
-    face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+        # Detect faces
+        face_locations = face_recognition.face_locations(rgb_frame)
+        face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
 
-    # Loop through each face in this frame of video
-    for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
-        # See if the face is a match for the known face(s)
-        matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+        # Match faces
+        for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
+            matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+            name = "Unknown"
 
-        name = "Unknown"
+            face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
+            best_match_index = np.argmin(face_distances)
+            if matches[best_match_index]:
+                name = known_face_names[best_match_index]
+                cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 255, 0), cv2.FILLED)
+                font = cv2.FONT_HERSHEY_DUPLEX
+                cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+            else:
+                cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+                cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
+                font = cv2.FONT_HERSHEY_DUPLEX
+                cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
 
-        # If a match was found in known_face_encodings, just use the first one.
-        # if True in matches:
-        #     first_match_index = matches.index(True)
-        #     name = known_face_names[first_match_index]
+        # Display the frame
+        cv2.imshow('Video', frame)
 
-        # Or instead, use the known face with the smallest distance to the new face
-        face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
-        best_match_index = np.argmin(face_distances)
-        if matches[best_match_index]:
-            name = known_face_names[best_match_index]
-            cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+        # Check if the 'q' key is pressed or the window is closed
+        if cv2.waitKey(1) & 0xFF == ord('q') or not cv2.getWindowProperty('Video', cv2.WND_PROP_VISIBLE):
+            break
 
-            # Draw a label with a name below the face
-            cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 255, 0), cv2.FILLED)
-            font = cv2.FONT_HERSHEY_DUPLEX
-            cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+except Exception as e:
+    print(f"An error occurred: {e}")
 
-        else:
-            # Draw a box around the face
-            cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
-
-            # Draw a label with a name below the face
-            cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
-            font = cv2.FONT_HERSHEY_DUPLEX
-            cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
-
-    # Display the resulting image
-    cv2.imshow('Video', frame)
-
-    # Hit 'q' on the keyboard to quit!
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-# Release handle to the webcam
-video_capture.release()
-cv2.destroyAllWindows()
+finally:
+    # Ensure all resources are released
+    video_capture.release()
+    cv2.destroyAllWindows()
+    print("Program terminated.")
+    sys.exit(0)
